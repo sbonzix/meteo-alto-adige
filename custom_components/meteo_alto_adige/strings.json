@@ -1,0 +1,5 @@
+{
+  "title": "Meteo Alto Adige Stations",
+  "config": {"step": {"user": {"title": "Choose a weather station", "description": "Choose one of the stations exposed by the Province of Bolzano service.", "data": {"station_id": "Weather station"}, "data_description": {"station_id": "The station used for current measurements."}}}, "error": {"cannot_connect": "Unable to connect to the weather service."}, "abort": {"cannot_connect": "Unable to retrieve the station list.", "already_configured": "This station is already configured."}},
+  "entity": {"sensor": {"temperature": {"name": "Temperature"}, "humidity": {"name": "Humidity"}, "pressure": {"name": "Pressure"}, "precipitation": {"name": "Precipitation since midnight"}, "wind_speed": {"name": "Wind speed"}, "wind_gust": {"name": "Wind gust"}, "solar_radiation": {"name": "Solar radiation"}}}
+}

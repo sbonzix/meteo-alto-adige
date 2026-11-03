@@ -1,0 +1,5 @@
+{
+  "title": "Stazioni Meteo Alto Adige",
+  "config": {"step": {"user": {"title": "Scegli una stazione meteo", "description": "Scegli una delle stazioni esposte dal servizio della Provincia di Bolzano.", "data": {"station_id": "Stazione meteo"}, "data_description": {"station_id": "La stazione usata per le misurazioni correnti."}}}, "error": {"cannot_connect": "Impossibile collegarsi al servizio meteo."}, "abort": {"cannot_connect": "Impossibile recuperare l’elenco delle stazioni.", "already_configured": "Questa stazione è già configurata."}},
+  "entity": {"sensor": {"temperature": {"name": "Temperatura"}, "humidity": {"name": "Umidità"}, "pressure": {"name": "Pressione"}, "precipitation": {"name": "Precipitazioni da mezzanotte"}, "wind_speed": {"name": "Velocità del vento"}, "wind_gust": {"name": "Raffica"}, "solar_radiation": {"name": "Radiazione solare"}}}
+}
