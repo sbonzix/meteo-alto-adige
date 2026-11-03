@@ -3,7 +3,6 @@
   "name": "Meteo Alto Adige Stations",
   "codeowners": ["@sbonzix"],
   "config_flow": true,
-  "categories": ["weather"],
   "documentation": "https://github.com/sbonzix/meteo-alto-adige",
   "issue_tracker": "https://github.com/sbonzix/meteo-alto-adige/issues",
   "iot_class": "cloud_polling",
