@@ -5,20 +5,22 @@ from the official weather stations of the Autonomous Province of
 Bolzano - South Tyrol.
 
 ## Features
-
-- Configuration from the Home Assistant user interface
-- Dynamic list of official weather stations
-- Official station codes, coordinates and elevation
+- Official South Tyrol Open Data weather service
+- Dynamic selection of official weather stations
 - Air temperature
 - Relative humidity
 - Atmospheric pressure
-- Precipitation since midnight
-- Mean wind speed
+- Precipitation
+- Wind speed
 - Wind gust
-- Wind direction
-- Solar radiation, when available
-- Current condition from MeteoEuregio
-- Daily and hourly forecasts from MeteoEuregio
+- Wind direction in degrees
+- Global solar radiation
+- Sunshine duration
+- Optional external Home Assistant weather entity for conditions
+  and forecasts
+- Daily, hourly and twice-daily forecasts when supported
+- Italian, German and English translations
+- UI-based configuration
 
 ## Data sources
 
@@ -36,18 +38,27 @@ The currently configured default source entity is:
 Full attribution in Italian, German and English is available in
 NOTICE.md.
 
-## MeteoEuregio dependency
+## Weather conditions and forecasts
 
-Current station measurements are obtained independently from the
-South Tyrol provincial weather services.
+Current measurements are obtained directly from the official
+South Tyrol Open Data weather services.
 
-Weather condition and forecasts currently require the MeteoEuregio
-custom integration and the following Home Assistant weather entity:
+Optionally, you can select any Home Assistant `weather` entity
+to provide:
 
-    weather.esterno_meteoeuregio
+- current weather condition
+- daily forecast
+- hourly forecast
+- twice-daily forecast, when supported by the selected provider
 
-If this entity is unavailable, current station measurements remain
-available but weather condition and forecasts are not provided.
+The forecast provider is optional. Without one, all current
+measurements from the selected provincial weather station remain
+available.
+
+The forecast source can be changed at any time from:
+
+Settings > Devices & services > Meteo Alto Adige Stations > Configure
+
 
 ## Manual installation
 

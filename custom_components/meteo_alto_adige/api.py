@@ -1,28 +1,20 @@
-"""Client for official South Tyrol weather-station services."""
+"""Client for the South Tyrol Open Data weather services."""
 
 from __future__ import annotations
 
-import html
-import re
 from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import ClientError, ClientSession
 
-
-STATIONS_URL = (
-    "https://geoservices.buergernetz.bz.it/"
-    "services/meteo/v1/stations"
-)
-
-CURRENT_DATA_URL = (
-    "https://www.provincia.bz.it/"
-    "weather/mobile/akt_w.asp"
+from .const import (
+    SENSORS_URL,
+    STATIONS_URL,
 )
 
 
 class MeteoAltoAdigeError(Exception):
-    """Base integration API error."""
+    """Base API error."""
 
 
 @dataclass(slots=True)
@@ -36,77 +28,30 @@ class Station:
     longitude: float | None = None
 
 
-_TAG_RE = re.compile(r"<[^>]+>")
-
-
-def _html_to_text(raw: str) -> str:
-    """Convert the legacy station page to normalized text."""
-
-    raw = re.sub(
-        r"<script\b[^>]*>.*?</script>",
-        " ",
-        raw,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-
-    raw = re.sub(
-        r"<style\b[^>]*>.*?</style>",
-        " ",
-        raw,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-
-    raw = re.sub(
-        r"<(?:br|p|div|li|tr|h[1-6])\b[^>]*>",
-        "\n",
-        raw,
-        flags=re.IGNORECASE,
-    )
-
-    raw = _TAG_RE.sub(" ", raw)
-    raw = html.unescape(raw)
-    raw = raw.replace("\xa0", " ")
-
-    raw = re.sub(r"[ \t]+", " ", raw)
-    raw = re.sub(r"\n\s*\n+", "\n", raw)
-
-    return raw.strip()
-
-
-def _number(
-    text: str,
-    label: str,
+def _as_float(
+    value: Any,
 ) -> float | None:
-    """Extract a numeric measurement following a label."""
+    """Convert an API value to float."""
 
-    match = re.search(
-        label
-        + r"\s*:?\s*(-?\d+(?:[.,]\d+)?|--)",
-        text,
-        re.IGNORECASE,
-    )
-
-    if not match:
+    if value in (None, ""):
         return None
 
-    raw_value = match.group(1)
-
-    if raw_value == "--":
+    try:
+        return float(value)
+    except (TypeError, ValueError):
         return None
-
-    return float(raw_value.replace(",", "."))
 
 
 def parse_station_list(
     payload: dict[str, Any],
-    ) -> list[Station]:
-    """Parse the official stations GeoJSON response."""
+) -> list[Station]:
+    """Parse the station GeoJSON response."""
 
     features = payload.get("features")
 
     if not isinstance(features, list):
         raise MeteoAltoAdigeError(
-            "Invalid stations GeoJSON response"
+            "Invalid stations response"
         )
 
     stations: list[Station] = []
@@ -125,9 +70,10 @@ def parse_station_list(
         if not station_code:
             continue
 
-        # Keep meteorological stations.
-        # The API also contains hydrological and other stations.
-        if not str(station_code).upper().endswith("MS"):
+        station_code = str(station_code)
+
+        # Only meteorological stations.
+        if not station_code.upper().endswith("MS"):
             continue
 
         name = (
@@ -139,8 +85,8 @@ def parse_station_list(
 
         stations.append(
             Station(
-                station_id=str(station_code),
-                name=str(name).strip().title(),
+                station_id=station_code,
+                name=str(name).strip(),
                 altitude=_as_float(
                     properties.get("ALT")
                 ),
@@ -164,145 +110,83 @@ def parse_station_list(
     )
 
 
-def _as_float(
-    value: Any,
-) -> float | None:
-    """Convert an API value to float."""
-
-    if value in (None, ""):
-        return None
-
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def parse_current_station(
-    raw: str,
+def parse_sensor_data(
+    payload: list[dict[str, Any]],
     station: Station,
 ) -> dict[str, Any]:
-    """Parse current observations from the station page."""
+    """Convert Open Data sensor values to HA weather data."""
 
-    text = _html_to_text(raw)
+    sensors: dict[str, dict[str, Any]] = {}
 
-    code_match = re.search(
-        r"Station code\s*:\s*([A-Z0-9]+)",
-        text,
-        re.IGNORECASE,
+    for item in payload:
+        sensor_type = item.get("TYPE")
+
+        if sensor_type:
+            sensors[str(sensor_type)] = item
+
+    def value(
+        sensor_type: str,
+    ) -> float | None:
+        sensor = sensors.get(sensor_type)
+
+        if sensor is None:
+            return None
+
+        return _as_float(sensor.get("VALUE"))
+
+    # API wind measurements are m/s.
+    # The integration exposes km/h.
+    wind_speed_ms = value("WG")
+    wind_gust_ms = value("WG.BOE")
+
+    wind_speed = (
+        wind_speed_ms * 3.6
+        if wind_speed_ms is not None
+        else None
     )
 
-    altitude_match = re.search(
-        r"Station altitude\s*:\s*(\d+(?:[.,]\d+)?)",
-        text,
-        re.IGNORECASE,
+    wind_gust = (
+        wind_gust_ms * 3.6
+        if wind_gust_ms is not None
+        else None
     )
 
-    coordinates_match = re.search(
-        r"Latitude\s*/\s*Longitude\s*:\s*"
-        r"([\d.]+)\s*°?\s*/\s*([\d.]+)",
-        text,
-        re.IGNORECASE,
-    )
+    # Use the newest timestamp present in the response.
+    dates = [
+        item.get("DATE")
+        for item in payload
+        if item.get("DATE")
+    ]
 
-    updated_match = re.search(
-        r"Measured data from\s*"
-        r"(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2})",
-        text,
-        re.IGNORECASE,
-    )
-
-    wind_direction_match = re.search(
-        r"Wind direction\s*:\s*"
-        r"([A-Z]{1,3}|--)",
-        text,
-        re.IGNORECASE,
-    )
-
-    temperature = _number(
-        text,
-        r"Air temperature(?:\s*\(°C\))?",
-    )
-
-    if temperature is None:
-        raise MeteoAltoAdigeError(
-            "Temperature not found in station response"
-        )
-
-    altitude = station.altitude
-
-    if altitude_match:
-        altitude = float(
-            altitude_match.group(1).replace(",", ".")
-        )
-
-    latitude = station.latitude
-    longitude = station.longitude
-
-    if coordinates_match:
-        latitude = float(coordinates_match.group(1))
-        longitude = float(coordinates_match.group(2))
-
-    wind_bearing: str | None = None
-
-    if (
-        wind_direction_match
-        and wind_direction_match.group(1) != "--"
-    ):
-        wind_bearing = (
-            wind_direction_match.group(1).upper()
-        )
+    updated = max(dates) if dates else None
 
     return {
         "name": station.name,
-        "station_code": (
-            code_match.group(1)
-            if code_match
-            else station.station_id
-        ),
-        "altitude": altitude,
-        "latitude": latitude,
-        "longitude": longitude,
-        "updated": (
-            updated_match.group(1)
-            if updated_match
-            else None
-        ),
-        "temperature": temperature,
-        "humidity": _number(
-            text,
-            r"Relative humidity(?:\s*\(%\))?",
-        ),
-        "pressure": _number(
-            text,
-            r"Air pressure(?:\s*\(hPa\))?",
-        ),
-        "precipitation": _number(
-            text,
-            r"Precipitation since midnight"
-            r"(?:\s*\(mm\))?",
-        ),
-        "wind_speed": _number(
-            text,
-            r"(?:Medium|Average) wind speed"
-            r"(?:\s*\(km/h\))?",
-        ),
-        "wind_gust": _number(
-            text,
-            r"(?:Gust speed|Wind gust)"
-            r"(?:\s*\(km/h\))?",
-        ),
-        "wind_bearing": wind_bearing,
-        "solar_radiation": _number(
-            text,
-            r"Global (?:Solar Irradiance|radiation)"
-            r"(?:\s*\(W/m²\))?",
-        ),
+        "station_code": station.station_id,
+        "altitude": station.altitude,
+        "latitude": station.latitude,
+        "longitude": station.longitude,
+        "updated": updated,
+
+        "temperature": value("LT"),
+        "humidity": value("LF"),
+        "pressure": value("LD.RED"),
+
+        "precipitation": value("N"),
+
+        "wind_speed": wind_speed,
+        "wind_gust": wind_gust,
+
+        # Home Assistant accepts degrees for wind bearing.
+        "wind_bearing": value("WR"),
+
+        "solar_radiation": value("GS"),
+        "sunshine_duration": value("SD"),
     }
 
 
 class MeteoAltoAdigeClient:
-    """Client for South Tyrol weather services."""
+    """Client for the South Tyrol weather Open Data API."""
 
     def __init__(
         self,
@@ -311,7 +195,7 @@ class MeteoAltoAdigeClient:
         self._session = session
 
         self._headers = {
-            "Accept-Language": "en",
+            "Accept": "application/json",
             "User-Agent": (
                 "HomeAssistant MeteoAltoAdige"
             ),
@@ -323,8 +207,8 @@ class MeteoAltoAdigeClient:
         self,
         url: str,
         params: dict[str, str] | None = None,
-    ) -> dict[str, Any]:
-        """Retrieve a JSON response."""
+    ) -> Any:
+        """Retrieve JSON from the API."""
 
         try:
             async with self._session.get(
@@ -335,7 +219,7 @@ class MeteoAltoAdigeClient:
             ) as response:
                 response.raise_for_status()
 
-                payload = await response.json(
+                return await response.json(
                     content_type=None
                 )
 
@@ -348,45 +232,10 @@ class MeteoAltoAdigeClient:
                 str(error)
             ) from error
 
-        if not isinstance(payload, dict):
-            raise MeteoAltoAdigeError(
-                "Unexpected JSON response"
-            )
-
-        return payload
-
-    async def _get_text(
-        self,
-        url: str,
-        params: dict[str, str] | None = None,
-    ) -> str:
-        """Retrieve a text response."""
-
-        try:
-            async with self._session.get(
-                url,
-                params=params,
-                headers=self._headers,
-                timeout=20,
-            ) as response:
-                response.raise_for_status()
-
-                return await response.text(
-                    errors="replace"
-                )
-
-        except (
-            ClientError,
-            TimeoutError,
-        ) as error:
-            raise MeteoAltoAdigeError(
-                str(error)
-            ) from error
-
     async def stations(
         self,
     ) -> list[Station]:
-        """Retrieve official station metadata."""
+        """Retrieve weather stations."""
 
         payload = await self._get_json(
             STATIONS_URL,
@@ -394,6 +243,11 @@ class MeteoAltoAdigeClient:
                 "output_format": "JSON",
             },
         )
+
+        if not isinstance(payload, dict):
+            raise MeteoAltoAdigeError(
+                "Invalid stations API response"
+            )
 
         stations = parse_station_list(payload)
 
@@ -408,80 +262,39 @@ class MeteoAltoAdigeClient:
         self,
         station_id: str,
     ) -> dict[str, Any]:
-        """Retrieve current observations for a station."""
+        """Retrieve the latest measurements for a station."""
 
         if station_id not in self._stations_cache:
             await self.stations()
 
-        station = self._stations_cache.get(station_id)
+        station = self._stations_cache.get(
+            station_id
+        )
 
         if station is None:
             raise MeteoAltoAdigeError(
                 f"Unknown station: {station_id}"
             )
 
-        # Temporary compatibility bridge:
-        # current observations still come from the official
-        # station page until the timeseries sensor mapping
-        # has been fully validated.
-        raw = await self._get_text(
-            CURRENT_DATA_URL,
+        payload = await self._get_json(
+            SENSORS_URL,
             params={
-                "stations_stid": (
-                    await self._legacy_station_id(
-                        station.station_id
-                    )
-                )
+                "station_code": station_id,
+                "output_format": "JSON",
             },
         )
 
-        return parse_current_station(
-            raw,
+        if not isinstance(payload, list):
+            raise MeteoAltoAdigeError(
+                "Invalid sensors API response"
+            )
+
+        if not payload:
+            raise MeteoAltoAdigeError(
+                f"No measurements for station {station_id}"
+            )
+
+        return parse_sensor_data(
+            payload,
             station,
-        )
-
-    async def _legacy_station_id(
-        self,
-        station_code: str,
-    ) -> str:
-        """Resolve the old numeric station identifier.
-
-        The legacy page is temporarily used only for current
-        observations. Its overview maps station codes to the
-        corresponding numeric IDs.
-        """
-
-        overview = await self._get_text(
-            CURRENT_DATA_URL
-        )
-
-        pattern = re.compile(
-            r"href=[\"'][^\"']*"
-            r"stations_stid=(\d+)[^\"']*[\"']"
-            r"[^>]*>(.*?)</a>",
-            re.IGNORECASE | re.DOTALL,
-        )
-
-        for legacy_id, card in pattern.findall(overview):
-            card_text = _html_to_text(card)
-
-            if station_code in card_text:
-                return legacy_id
-
-        # The overview cards do not always include the
-        # official station code. Match by official name.
-        station = self._stations_cache.get(station_code)
-
-        if station is not None:
-            wanted_name = station.name.casefold()
-
-            for legacy_id, card in pattern.findall(overview):
-                card_text = _html_to_text(card).casefold()
-
-                if wanted_name in card_text:
-                    return legacy_id
-
-        raise MeteoAltoAdigeError(
-            "Unable to map the official station code "
-            "to the current-observation endpoint"
         )

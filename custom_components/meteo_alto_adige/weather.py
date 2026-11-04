@@ -25,9 +25,9 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .const import (
+    CONF_FORECAST_ENTITY,
     CONF_STATION_NAME,
     DOMAIN,
-    FORECAST_ENTITY_ID,
 )
 from .coordinator import MeteoAltoAdigeCoordinator
 
@@ -73,7 +73,7 @@ class MeteoAltoAdigeWeather(
     CoordinatorEntity[MeteoAltoAdigeCoordinator],
     WeatherEntity,
 ):
-    """Combined station measurements and MeteoEuregio forecast."""
+    """Weather entity combining observations and optional forecast."""
 
     _attr_has_entity_name = True
     _attr_name = None
@@ -90,14 +90,11 @@ class MeteoAltoAdigeWeather(
     _attr_attribution = (
         "IT: Dati delle stazioni meteorologiche: "
         "Agenzia per la Protezione civile, "
-        "Provincia autonoma di Bolzano - Alto Adige. "
-        "Condizioni e previsioni: MeteoEuregio. | "
+        "Provincia autonoma di Bolzano - Alto Adige. | "
         "DE: Wetterstationsdaten: Agentur für Bevölkerungsschutz, "
-        "Autonome Provinz Bozen - Südtirol. "
-        "Wetterlage und Vorhersagen: MeteoEuregio. | "
+        "Autonome Provinz Bozen - Südtirol. | "
         "EN: Weather-station data: Civil Protection Agency, "
-        "Autonomous Province of Bolzano - South Tyrol. "
-        "Conditions and forecasts: MeteoEuregio."
+        "Autonomous Province of Bolzano - South Tyrol."
     )
 
     def __init__(
@@ -131,12 +128,32 @@ class MeteoAltoAdigeWeather(
         }
 
     @property
-    def condition(self) -> str | None:
-        """Return the condition supplied by MeteoEuregio."""
+    def forecast_entity_id(self) -> str | None:
+        """Return the configured forecast source."""
 
-        source = self.hass.states.get(
-            FORECAST_ENTITY_ID
+        entity_id = self.entry.options.get(
+            CONF_FORECAST_ENTITY
         )
+
+        if not entity_id:
+            return None
+
+        return str(entity_id)
+
+    @property
+    def condition(self) -> str | None:
+        """Return condition from the configured weather entity."""
+
+        entity_id = self.forecast_entity_id
+
+        if entity_id is None:
+            return None
+
+        # Prevent an accidental reference to this entity itself.
+        if entity_id == self.entity_id:
+            return None
+
+        source = self.hass.states.get(entity_id)
 
         if source is None:
             return None
@@ -150,11 +167,17 @@ class MeteoAltoAdigeWeather(
     def supported_features(
         self,
     ) -> WeatherEntityFeature:
-        """Return forecast features supported by MeteoEuregio."""
+        """Return forecast features of the configured source."""
 
-        source = self.hass.states.get(
-            FORECAST_ENTITY_ID
-        )
+        entity_id = self.forecast_entity_id
+
+        if entity_id is None:
+            return WeatherEntityFeature(0)
+
+        if entity_id == self.entity_id:
+            return WeatherEntityFeature(0)
+
+        source = self.hass.states.get(entity_id)
 
         if source is None:
             return WeatherEntityFeature(0)
@@ -175,11 +198,17 @@ class MeteoAltoAdigeWeather(
         self,
         forecast_type: str,
     ) -> list[Forecast] | None:
-        """Retrieve a forecast from MeteoEuregio."""
+        """Retrieve forecast from the configured weather entity."""
 
-        source = self.hass.states.get(
-            FORECAST_ENTITY_ID
-        )
+        entity_id = self.forecast_entity_id
+
+        if entity_id is None:
+            return None
+
+        if entity_id == self.entity_id:
+            return None
+
+        source = self.hass.states.get(entity_id)
 
         if source is None:
             return None
@@ -188,7 +217,7 @@ class MeteoAltoAdigeWeather(
             domain="weather",
             service="get_forecasts",
             service_data={
-                ATTR_ENTITY_ID: FORECAST_ENTITY_ID,
+                ATTR_ENTITY_ID: entity_id,
                 "type": forecast_type,
             },
             blocking=True,
@@ -198,9 +227,7 @@ class MeteoAltoAdigeWeather(
         if not isinstance(response, dict):
             return None
 
-        source_response = response.get(
-            FORECAST_ENTITY_ID
-        )
+        source_response = response.get(entity_id)
 
         if not isinstance(source_response, dict):
             return None
@@ -215,7 +242,7 @@ class MeteoAltoAdigeWeather(
     async def async_forecast_daily(
         self,
     ) -> list[Forecast] | None:
-        """Return the daily MeteoEuregio forecast."""
+        """Return daily forecast."""
 
         return await self._async_get_forecast(
             "daily"
@@ -224,7 +251,7 @@ class MeteoAltoAdigeWeather(
     async def async_forecast_hourly(
         self,
     ) -> list[Forecast] | None:
-        """Return the hourly MeteoEuregio forecast."""
+        """Return hourly forecast."""
 
         return await self._async_get_forecast(
             "hourly"
@@ -233,7 +260,7 @@ class MeteoAltoAdigeWeather(
     async def async_forecast_twice_daily(
         self,
     ) -> list[Forecast] | None:
-        """Return the twice-daily forecast."""
+        """Return twice-daily forecast."""
 
         return await self._async_get_forecast(
             "twice_daily"
@@ -263,7 +290,7 @@ class MeteoAltoAdigeWeather(
     def native_pressure(
         self,
     ) -> float | None:
-        """Return measured pressure."""
+        """Return measured atmospheric pressure."""
 
         return self.coordinator.data.get(
             "pressure"
@@ -273,7 +300,7 @@ class MeteoAltoAdigeWeather(
     def native_wind_speed(
         self,
     ) -> float | None:
-        """Return measured mean wind speed."""
+        """Return measured wind speed."""
 
         return self.coordinator.data.get(
             "wind_speed"
@@ -283,7 +310,7 @@ class MeteoAltoAdigeWeather(
     def native_wind_gust_speed(
         self,
     ) -> float | None:
-        """Return measured wind gust speed."""
+        """Return measured wind gust."""
 
         return self.coordinator.data.get(
             "wind_gust"
@@ -292,8 +319,8 @@ class MeteoAltoAdigeWeather(
     @property
     def wind_bearing(
         self,
-    ) -> str | float | None:
-        """Return measured wind direction."""
+    ) -> float | None:
+        """Return measured wind direction in degrees."""
 
         return self.coordinator.data.get(
             "wind_bearing"
@@ -303,7 +330,7 @@ class MeteoAltoAdigeWeather(
     def extra_state_attributes(
         self,
     ) -> dict[str, Any]:
-        """Return station-specific attributes."""
+        """Return station metadata and additional measurements."""
 
         data = self.coordinator.data
 
@@ -317,15 +344,15 @@ class MeteoAltoAdigeWeather(
                 "updated",
                 "precipitation",
                 "solar_radiation",
+                "sunshine_duration",
             )
             if data.get(key) is not None
         }
 
-        attributes["condition_source"] = (
-            FORECAST_ENTITY_ID
-        )
-        attributes["forecast_source"] = (
-            FORECAST_ENTITY_ID
-        )
+        entity_id = self.forecast_entity_id
+
+        if entity_id is not None:
+            attributes["condition_source"] = entity_id
+            attributes["forecast_source"] = entity_id
 
         return attributes

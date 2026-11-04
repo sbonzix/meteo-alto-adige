@@ -1,5 +1,66 @@
 {
   "title": "Stazioni Meteo Alto Adige",
-  "config": {"step": {"user": {"title": "Scegli una stazione meteo", "description": "Scegli una delle stazioni esposte dal servizio della Provincia di Bolzano.", "data": {"station_id": "Stazione meteo"}, "data_description": {"station_id": "La stazione usata per le misurazioni correnti."}}}, "error": {"cannot_connect": "Impossibile collegarsi al servizio meteo."}, "abort": {"cannot_connect": "Impossibile recuperare l’elenco delle stazioni.", "already_configured": "Questa stazione è già configurata."}},
-  "entity": {"sensor": {"temperature": {"name": "Temperatura"}, "humidity": {"name": "Umidità"}, "pressure": {"name": "Pressione"}, "precipitation": {"name": "Precipitazioni da mezzanotte"}, "wind_speed": {"name": "Velocità del vento"}, "wind_gust": {"name": "Raffica"}, "solar_radiation": {"name": "Radiazione solare"}}}
+  "config": {
+    "step": {
+      "user": {
+        "title": "Scegli una stazione meteo",
+        "description": "Scegli una delle stazioni meteorologiche della Provincia autonoma di Bolzano - Alto Adige.",
+        "data": {
+          "station_id": "Stazione meteo"
+        },
+        "data_description": {
+          "station_id": "Stazione utilizzata per le misurazioni meteorologiche correnti."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile collegarsi al servizio meteo."
+    },
+    "abort": {
+      "cannot_connect": "Impossibile recuperare l'elenco delle stazioni.",
+      "already_configured": "Questa stazione è già configurata."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sorgente delle previsioni",
+        "description": "Scegli l'entità meteo da utilizzare per la condizione corrente e per le previsioni.",
+        "data": {
+          "forecast_entity": "Entità meteo"
+        },
+        "data_description": {
+          "forecast_entity": "Entità weather che fornisce la condizione meteorologica e le previsioni. Le misurazioni correnti provengono sempre dalla stazione meteorologica provinciale selezionata."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "humidity": {
+        "name": "Umidità"
+      },
+      "pressure": {
+        "name": "Pressione"
+      },
+      "precipitation": {
+        "name": "Precipitazioni"
+      },
+      "wind_speed": {
+        "name": "Velocità del vento"
+      },
+      "wind_gust": {
+        "name": "Raffica"
+      },
+      "solar_radiation": {
+        "name": "Radiazione solare"
+      },
+      "sunshine_duration": {
+        "name": "Durata del soleggiamento"
+      }
+    }
+  }
 }

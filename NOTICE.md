@@ -20,9 +20,11 @@ Fonti:
 Secondo il catalogo Open Data, i dataset Open Data utilizzati sono
 pubblicati con licenza **Creative Commons CC0 1.0 Universal**.
 
-Le condizioni e le previsioni meteorologiche sono ottenute attraverso
-un'entità Home Assistant fornita dall'integrazione MeteoEuregio e
-rimangono soggette alle condizioni delle rispettive fonti.
+Le condizioni meteorologiche e le previsioni, quando configurate,
+sono fornite dall'entità weather di Home Assistant selezionata
+dall'utente e rimangono soggette alle condizioni e alle licenze
+della relativa sorgente dati.
+
 
 ## Deutsch
 
@@ -44,9 +46,10 @@ Quellen:
 Laut Open-Data-Katalog werden die verwendeten Open-Data-Datensätze
 unter **Creative Commons CC0 1.0 Universal** bereitgestellt.
 
-Wetterlage und Vorhersagen werden über eine Home-Assistant-Entität
-der Integration MeteoEuregio bezogen und unterliegen den Bedingungen
-der jeweiligen Quellen.
+Wetterlage und Vorhersagen werden, sofern konfiguriert, von der
+vom Benutzer ausgewählten Home-Assistant-Wetterentität bereitgestellt
+und unterliegen den Bedingungen und Lizenzen der jeweiligen
+Datenquelle.
 
 ## English
 
@@ -68,9 +71,10 @@ Sources:
 According to the Open Data catalogue, the Open Data datasets used
 are made available under **Creative Commons CC0 1.0 Universal**.
 
-Weather conditions and forecasts are obtained through a Home
-Assistant weather entity provided by the MeteoEuregio integration
-and remain subject to the terms of their respective sources.
+Weather conditions and forecasts, when configured, are provided
+by the Home Assistant weather entity selected by the user and
+remain subject to the terms and licenses of the corresponding
+data source.
 
 ## Disclaimer
 

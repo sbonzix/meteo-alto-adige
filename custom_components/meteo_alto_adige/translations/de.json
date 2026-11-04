@@ -1,65 +1,66 @@
 {
-  "title": "Wetter Südtirol-Stationen",
-  "config":
-  {
-	"step":
-	{
-	  "user":
-	  {
-		"title": "Wählen Sie eine Wetterstation aus",
-		"description": "Wählen Sie eine der vom Dienst der Provinz Bozen bereitgestellten Stationen aus.",
-		"data":
-		{
-		  "station_id": "Wetterstation"
-		},
-		"data_description":
-		{
-		  "station_id": "Die für aktuelle Messungen verwendete Station."
-		}
-	  }
-	},
-	"error":
-	{
-	  "cannot_connect": "Verbindung zum Wetterdienst nicht möglich."
-	},
-	"abort":
-	{
-	  "cannot_connect": "Die Stationsliste kann nicht abgerufen werden.",
-	  "already_configured": "Diese Station ist bereits konfiguriert."
-	}
+  "title": "Wetterstationen Südtirol",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Wetterstation auswählen",
+        "description": "Wählen Sie eine Wetterstation der Autonomen Provinz Bozen - Südtirol aus.",
+        "data": {
+          "station_id": "Wetterstation"
+        },
+        "data_description": {
+          "station_id": "Station, die für die aktuellen meteorologischen Messwerte verwendet wird."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Wetterdienst nicht möglich."
+    },
+    "abort": {
+      "cannot_connect": "Die Liste der Wetterstationen konnte nicht abgerufen werden.",
+      "already_configured": "Diese Wetterstation ist bereits konfiguriert."
+    }
   },
-  "entity":
-  {
-	"sensor":
-	{
-	  "temperature":
-	  {
-		"name": "Temperatur"
-	  },
-	  "humidity":
-	  {
-		"name": "Luftfeuchtigkeit"
-	  },
-	  "pressure":
-	  {
-		"name": "Luftdruck"
-	  },
-	  "precipitation":
-	  {
-		"name": "Niederschlag seit Mitternacht"
-	  },
-	  "wind_speed":
-	  {
-		"name": "Windgeschwindigkeit"
-	  },
-	  "wind_gust":
-	  {
-		"name": "Windböe"
-	  },
-	  "solar_radiation":
-	  {
-		"name": "Sonneneinstrahlung"
-	  }
-	}
+  "options": {
+    "step": {
+      "init": {
+        "title": "Quelle für Wettervorhersagen",
+        "description": "Wählen Sie die Wetterentität für die aktuelle Wetterlage und die Vorhersagen aus.",
+        "data": {
+          "forecast_entity": "Wetterentität"
+        },
+        "data_description": {
+          "forecast_entity": "Weather-Entität für Wetterlage und Vorhersagen. Die aktuellen Messwerte stammen weiterhin von der ausgewählten Wetterstation der Autonomen Provinz Bozen - Südtirol."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "humidity": {
+        "name": "Luftfeuchtigkeit"
+      },
+      "pressure": {
+        "name": "Luftdruck"
+      },
+      "precipitation": {
+        "name": "Niederschlag"
+      },
+      "wind_speed": {
+        "name": "Windgeschwindigkeit"
+      },
+      "wind_gust": {
+        "name": "Windböe"
+      },
+      "solar_radiation": {
+        "name": "Globalstrahlung"
+      },
+      "sunshine_duration": {
+        "name": "Sonnenscheindauer"
+      }
+    }
   }
 }
