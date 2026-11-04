@@ -6,5 +6,5 @@
   "documentation": "https://github.com/sbonzix/meteo-alto-adige",
   "issue_tracker": "https://github.com/sbonzix/meteo-alto-adige/issues",
   "iot_class": "cloud_polling",
-  "version": "0.4.3"
+  "version": "0.4.4"
 }
