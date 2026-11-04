@@ -1,10 +1,12 @@
 {
   "domain": "meteo_alto_adige",
   "name": "Meteo Alto Adige Stations",
-  "codeowners": ["@sbonzix"],
+  "codeowners": [
+    "@sbonzix"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/sbonzix/meteo-alto-adige",
-  "issue_tracker": "https://github.com/sbonzix/meteo-alto-adige/issues",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/sbonzix/meteo-alto-adige/issues",
   "version": "0.5.0"
 }
