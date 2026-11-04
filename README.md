@@ -36,6 +36,19 @@ The currently configured default source entity is:
 Full attribution in Italian, German and English is available in
 NOTICE.md.
 
+## MeteoEuregio dependency
+
+Current station measurements are obtained independently from the
+South Tyrol provincial weather services.
+
+Weather condition and forecasts currently require the MeteoEuregio
+custom integration and the following Home Assistant weather entity:
+
+    weather.esterno_meteoeuregio
+
+If this entity is unavailable, current station measurements remain
+available but weather condition and forecasts are not provided.
+
 ## Manual installation
 
 Copy:
