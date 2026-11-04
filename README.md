@@ -31,10 +31,6 @@ Bolzano - South Tyrol.
 Weather condition and forecast data are obtained from an existing
 MeteoEuregio weather entity in Home Assistant.
 
-The currently configured default source entity is:
-
-    weather.esterno_meteoeuregio
-
 Full attribution in Italian, German and English is available in
 NOTICE.md.
 
@@ -43,22 +39,16 @@ NOTICE.md.
 Current measurements are obtained directly from the official
 South Tyrol Open Data weather services.
 
-Optionally, you can select any Home Assistant `weather` entity
-to provide:
-
-- current weather condition
-- daily forecast
-- hourly forecast
-- twice-daily forecast, when supported by the selected provider
+Optionally, any Home Assistant `weather` entity can be selected
+to provide the current weather condition and forecasts.
 
 The forecast provider is optional. Without one, all current
 measurements from the selected provincial weather station remain
 available.
 
-The forecast source can be changed at any time from:
+The forecast source can be configured or changed from:
 
 Settings > Devices & services > Meteo Alto Adige Stations > Configure
-
 
 ## Manual installation
 

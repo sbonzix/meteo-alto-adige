@@ -162,14 +162,16 @@ class MeteoAltoAdigeOptionsFlow(
 
         schema = vol.Schema(
             {
-                vol.Optional(
-                    CONF_FORECAST_ENTITY,
-                    default=current_entity,
-                ): EntitySelector(
-                    EntitySelectorConfig(
-                        domain="weather",
-                    )
-                )
+vol.Optional(
+    CONF_FORECAST_ENTITY,
+    description={
+        "suggested_value": current_entity,
+    },
+): EntitySelector(
+    EntitySelectorConfig(
+        domain="weather",
+    )
+)
             }
         )
 
